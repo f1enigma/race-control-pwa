@@ -99,6 +99,9 @@
   .rc-link{font-family:var(--mono);font-size:10px;color:var(--flag-blue);text-decoration:none;display:inline-block;margin-top:4px}
   .rc-link:hover{text-decoration:underline}
   .rc-src{font-size:10px;color:var(--ink-faint);margin-top:3px;font-family:var(--mono)}
+  .rc-more-pubs{font-size:10px;color:var(--ink-faint);margin-top:5px;padding-top:5px;border-top:1px dashed var(--line);line-height:1.5}
+  .rc-more-pubs a{color:var(--ink-dim);text-decoration:none}
+  .rc-more-pubs a:hover{color:var(--flag-blue);text-decoration:underline}
 
   .rc-empty,.rc-error{border:1px dashed var(--line);padding:28px 20px;text-align:center;color:var(--ink-dim);font-size:13px;line-height:1.6}
   .rc-error{border-color:var(--flag-red);color:var(--ink);text-align:left}
@@ -312,6 +315,7 @@
       if (!arr.length){ h += `<div class="rc-empty" style="padding:16px 10px">None</div>`; return h; }
       for (const i of arr.slice(0, CAP)){
         const pub = pubFromUrl(i.url);
+        const others = Array.isArray(i.otherUrls) ? i.otherUrls.filter(Boolean) : [];
         h += `
       <article class="rc-card">
         <div class="rc-flag ${FLAG[i.importance]||"green"}"></div>
@@ -325,6 +329,10 @@
           <div class="rc-sum">${esc(i.summary||"")}</div>
           ${i.url ? `<a class="rc-link" href="${esc(i.url)}" target="_blank" rel="noopener">Open source article ↗</a>` : ""}
           ${i.author ? `<div class="rc-src">via ${esc(i.author)}</div>` : ""}
+          ${others.length ? `<div class="rc-more-pubs">More coverage: ${others.map(u => {
+              const p = pubFromUrl(u);
+              return p ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(p)}</a>` : "";
+            }).filter(Boolean).join(", ")}</div>` : ""}
         </div>
       </article>`;
       }
@@ -442,18 +450,21 @@
 
 ${msgBlock}
 
-Respond with ONLY a JSON array (no markdown fences, no commentary, no text before or after). For each message that contains real news content (skip pure chatter, joins/leaves, empty messages), produce:
+Respond with ONLY a JSON array (no markdown fences, no commentary, no text before or after). For each DISTINCT news story (skip pure chatter, joins/leaves, empty messages), produce:
 {
-  "ts": "<the exact ts value from the message>",
+  "ts": "<the ts of the EARLIEST message reporting this story>",
   "headline": "<punchy headline, max 10 words>",
   "summary": "<ONE short sentence, max 25 words>",
   "importance": "critical" | "notable" | "routine",
   "category": "<one short lowercase tag, e.g. f1, fia, sponsor, ev, mobility, business>",
-  "url": "<the url field from the message if present, else null>",
-  "author": "<the from field if present, else null>"
+  "url": "<the url of the earliest message, else null>",
+  "author": "<the from field of the earliest message, else null>",
+  "otherUrls": ["<url of each OTHER message reporting the same story>", ...]
 }
 
-Importance rubric: "critical" = major breaking news, regulatory decisions, big sponsor deals signed/lost, leadership changes; "notable" = meaningful developments worth reading today; "routine" = minor updates, incremental coverage. Keep every field brief. If nothing qualifies, return [].`;
+IMPORTANT — merge duplicates: if several messages report the same underlying story (e.g. the same transfer rumor or announcement picked up by different outlets), output ONE entry for it, not one per message. Use the earliest ts and url as the main entry, and list every other message's url in "otherUrls" (omit or use [] if there are none). Keep every field brief.
+
+Importance rubric: "critical" = major breaking news, regulatory decisions, big sponsor deals signed/lost, leadership changes; "notable" = meaningful developments worth reading today; "routine" = minor updates, incremental coverage. If nothing qualifies, return [].`;
 
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
