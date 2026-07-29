@@ -1,14 +1,4 @@
 <!-- Race Control — standalone live Slack news monitor (bring-your-own-keys) -->
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Race Control — F1 News Monitor</title>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#14171C">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Race Control">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="icon" href="icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -22,7 +12,6 @@
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{background:var(--bg)}
   .rc-app{font-family:var(--body);background:var(--bg);color:var(--ink);min-height:100vh;
-    padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);
     background-image:repeating-linear-gradient(45deg,transparent 0 14px,rgba(255,255,255,.012) 14px 28px)}
   .rc-wrap{max-width:100%;margin:0 auto;padding:14px 24px 40px}
 
@@ -613,11 +602,5 @@ Importance rubric: "critical" = major breaking news, regulatory decisions, big s
       render();
     });
   });
-
-  if ("serviceWorker" in navigator){
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js").catch(()=>{});
-    });
-  }
 })();
 </script>
