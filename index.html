@@ -214,6 +214,7 @@
   let redditPosts = [];
   let redditError = null;
   let hasScanned = false;
+  const REDDIT_SUBS = ["formula1", "F1Technical", "motorsports"];
   const filters = new Set(["critical","notable","routine"]);
   let timer = null, countdown = null, nextAt = null, scanning = false;
   let ANTH_KEY = "", SLACK_TOK = "", CHANNEL = "";
@@ -292,8 +293,6 @@
   })();
 
   // ── rendering ────────────────────────────────────────
-  const REDDIT_SUBS = ["formula1", "F1Technical", "motorsports"];
-
   async function fetchReddit(){
     try{
       const rPrompt = `Search the web for the current top/hot discussion threads from these subreddits: ${REDDIT_SUBS.map(s=>"r/"+s).join(", ")}. Focus on what is actively being discussed right now.
