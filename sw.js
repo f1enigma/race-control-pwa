@@ -1,4 +1,4 @@
-const CACHE = "race-control-v3";
+const CACHE = "race-control-v4";
 const SHELL = ["./index.html", "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", e => {
