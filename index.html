@@ -213,6 +213,7 @@
   const items = new Map();
   let redditPosts = [];
   let redditError = null;
+  let hasScanned = false;
   const filters = new Set(["critical","notable","routine"]);
   let timer = null, countdown = null, nextAt = null, scanning = false;
   let ANTH_KEY = "", SLACK_TOK = "", CHANNEL = "";
@@ -389,10 +390,8 @@ If you cannot find current threads, return [].`;
     $("nRout").textContent = list.filter(i=>i.importance==="routine").length;
 
     const shown = list.filter(i=>filters.has(i.importance));
-    if (!shown.length && !redditPosts.length && !redditError){
-      feed.innerHTML = list.length
-        ? '<div class="rc-empty">Nothing matches the current filters.</div>'
-        : '<div class="rc-empty">No messages scanned yet. Press <b>Scan now</b> to pull the latest from the channel.</div>';
+    if (!hasScanned){
+      feed.innerHTML = '<div class="rc-empty">No messages scanned yet. Press <b>Scan now</b> to pull the latest from the channel.</div>';
       return;
     }
 
@@ -524,6 +523,7 @@ If you cannot find current threads, return [].`;
   async function scan(){
     if (scanning) return;
     scanning = true;
+    hasScanned = true;
     setLamp("busy");
     $("scanBtn").disabled = true;
     $("feedNote").textContent = "scanning…";
