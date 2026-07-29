@@ -291,38 +291,61 @@
   })();
 
   // ── rendering ────────────────────────────────────────
-  const REDDIT_SUBS = "formula1+F1Technical+motorsports";
+  const REDDIT_SUBS = ["formula1", "F1Technical", "motorsports"];
 
   async function fetchReddit(){
     try{
-      const r = await fetch(`https://www.reddit.com/r/${REDDIT_SUBS}/hot.json?limit=40&raw_json=1`, {
-        headers: { "Accept": "application/json" }
+      const rPrompt = `Search the web for the current top/hot discussion threads from these subreddits: ${REDDIT_SUBS.map(s=>"r/"+s).join(", ")}. Focus on what is actively being discussed right now.
+
+Respond with ONLY a JSON array (no markdown fences, no commentary), up to 5 elements, ordered by how much engagement/discussion each has:
+{
+  "title": "<the thread title>",
+  "sub": "<subreddit name without the r/ prefix>",
+  "score": <upvote count as a number, or null if unknown>,
+  "comments": <comment count as a number, or null if unknown>,
+  "url": "<direct link to the reddit thread>"
+}
+
+If you cannot find current threads, return [].`;
+
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": ANTH_KEY,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 1500,
+          messages: [{ role:"user", content: rPrompt }],
+          tools: [{ type: "web_search_20250305", name: "web_search" }]
+        })
       });
-      if (!r.ok) throw new Error(`Reddit returned ${r.status}`);
       const data = await r.json();
-      const posts = (data?.data?.children || [])
-        .map(c => c.data)
-        .filter(p => p && !p.stickied)
-        .map(p => ({
-          id: p.id,
-          title: p.title,
-          sub: p.subreddit,
-          score: p.score || 0,
-          comments: p.num_comments || 0,
-          url: "https://www.reddit.com" + p.permalink,
-          ts: p.created_utc,
-          flair: p.link_flair_text || null
-        }))
-        .sort((a,b) => b.score - a.score);
-      redditPosts = posts;
+      if (data.error) throw new Error(data.error.message || "API error");
+
+      const text = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n")
+        .replace(/```json|```/g,"").trim();
+      const arr = extractJsonArray(text);
+      if (!arr) throw new Error("Could not parse the Reddit results.");
+
+      redditPosts = arr.filter(p => p && p.title).map(p => ({
+        title: p.title,
+        sub: p.sub || "formula1",
+        score: typeof p.score === "number" ? p.score : null,
+        comments: typeof p.comments === "number" ? p.comments : null,
+        url: p.url || null
+      }));
       redditError = null;
     } catch(e){
-      redditError = (e instanceof TypeError) ? "Reddit blocked the request from this browser." : (e.message || "Reddit fetch failed");
+      redditError = e.message || "Reddit lookup failed";
     }
   }
 
   function redditColHtml(){
-    let h = `<div class="rc-col-head reddit"><span><span class="dot dot-orange"></span>Trending — Reddit</span>${redditPosts.length>5?`<span class="more">top 5</span>`:""}</div>`;
+    let h = `<div class="rc-col-head reddit"><span><span class="dot dot-orange"></span>Trending — Reddit</span></div>`;
     if (redditError){
       h += `<div class="rc-empty" style="padding:16px 10px">${esc(redditError)}</div>`;
       return h;
@@ -332,18 +355,17 @@
       return h;
     }
     for (const p of redditPosts.slice(0,5)){
+      const bits = [];
+      if (p.score != null) bits.push(`<span><b>▲ ${p.score.toLocaleString()}</b></span>`);
+      if (p.comments != null) bits.push(`<span>${p.comments.toLocaleString()} comments</span>`);
       h += `
       <article class="rc-card">
         <div class="rc-flag" style="background:#FF4500"></div>
         <div class="rc-card-body">
           <div class="rc-rd-sub">r/${esc(p.sub)}</div>
           <div class="rc-hl">${esc(p.title)}</div>
-          <div class="rc-rd-meta">
-            <span><b>▲ ${p.score.toLocaleString()}</b></span>
-            <span>${p.comments.toLocaleString()} comments</span>
-            ${p.flair ? `<span>${esc(p.flair)}</span>` : ""}
-          </div>
-          <a class="rc-link" href="${esc(p.url)}" target="_blank" rel="noopener">Open thread ↗</a>
+          ${bits.length ? `<div class="rc-rd-meta">${bits.join("")}</div>` : ""}
+          ${p.url ? `<a class="rc-link" href="${esc(p.url)}" target="_blank" rel="noopener">Open thread ↗</a>` : ""}
         </div>
       </article>`;
     }
