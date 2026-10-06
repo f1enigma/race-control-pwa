@@ -810,7 +810,7 @@ Respond with ONLY a JSON array (no markdown fences, no commentary). For each DIS
 
 MERGE DUPLICATES: if several messages report the same underlying story, output ONE entry — earliest ts and url as the main entry, every other url in "otherUrls".
 
-Importance, judged within the context above: "critical" = major breaking news, regulatory decisions, big commercial deals signed/lost, leadership changes; "notable" = meaningful developments worth reading today; "routine" = minor or incremental coverage. Keep fields brief. If nothing qualifies, return [].` }]
+Importance, judged within the context above: "critical" = major breaking news, regulatory decisions, big commercial deals signed/lost, leadership changes; AND ALSO any story that creates a scandal, controversy or problem for the sector named in the context above (e.g. rule-breaking or cheating allegations, investigations, penalties or disqualifications, safety incidents, legal disputes, sponsor withdrawals, financial or reputational damage, public backlash) — treat these as critical even when the coverage is minor or unconfirmed, and note in the summary if a claim is only alleged; "notable" = meaningful developments worth reading today; "routine" = minor or incremental coverage. Keep fields brief. If nothing qualifies, return [].` }]
         });
 
         const arr = extractJsonArray(text);
