@@ -457,9 +457,45 @@
       throw e;
     }
     return (data.messages || []).map(m => {
-      const { clean, url } = stripSlackLinks(m.text || "");
-      return { ts: m.ts, text: clean, url, user: m.username || (m.bot_profile && m.bot_profile.name) || m.user || null };
-    });
+      // IFTTT and other apps often leave `text` empty and put the headline in an
+      // attachment or a block, so gather content from all three.
+      const parts = [];
+      let firstUrl = null;
+
+      if (m.text) parts.push(m.text);
+
+      for (const a of (m.attachments || [])){
+        for (const field of [a.pretext, a.title, a.text, a.fallback]){
+          if (field && !parts.includes(field)) parts.push(field);
+        }
+        if (!firstUrl && a.title_link) firstUrl = a.title_link;
+        if (!firstUrl && a.original_url) firstUrl = a.original_url;
+      }
+
+      const walkBlocks = b => {
+        if (!b || typeof b !== "object") return;
+        if (typeof b.text === "string" && b.text) parts.push(b.text);
+        else if (b.text && typeof b.text === "object") walkBlocks(b.text);
+        if (b.url && !firstUrl) firstUrl = b.url;
+        for (const key of ["elements","fields","blocks"]){
+          if (Array.isArray(b[key])) b[key].forEach(walkBlocks);
+        }
+      };
+      (m.blocks || []).forEach(walkBlocks);
+
+      const joined = [...new Set(parts)].join(" — ");
+      const { clean, url } = stripSlackLinks(joined);
+      if (!firstUrl){
+        const bare = clean.match(/https?:\/\/\S+/);
+        if (bare) firstUrl = bare[0];
+      }
+      return {
+        ts: m.ts,
+        text: clean.replace(/\s+/g," ").trim(),
+        url: url || firstUrl,
+        user: m.username || (m.bot_profile && m.bot_profile.name) || m.user || null
+      };
+    }).filter(m => m.text);
   }
 
   // ── reddit + social (server-side search, no CORS) ───
