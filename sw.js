@@ -1,4 +1,4 @@
-const CACHE = "race-control-v4";
+const CACHE = "race-control-v6";
 const SHELL = ["./index.html", "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -13,8 +13,6 @@ self.addEventListener("activate", e => {
   self.clients.claim();
 });
 
-// Network-first for everything (this app needs live data anyway);
-// fall back to the cached app shell only if fully offline.
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
   e.respondWith(

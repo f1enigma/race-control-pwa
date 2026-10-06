@@ -1,7 +1,7 @@
-<!-- Race Control — standalone live Slack news monitor (bring-your-own-keys) -->
+<!-- Race Control — multi-feed media monitor (bring-your-own-keys) -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Race Control — F1 News Monitor</title>
+<title>Race Control — Media Monitor</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#14171C">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -41,7 +41,18 @@
   .rc-meta-row{font-family:var(--mono);font-size:10px;color:var(--ink-dim);display:flex;justify-content:space-between;gap:12px}
   .rc-meta-row b{color:var(--ink);font-weight:500}
 
-  /* ── settings panel ───────────────────────────────── */
+  /* ── feed tabs ────────────────────────────────────── */
+  .rc-tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+  .rc-tab{font-family:var(--disp);font-size:16px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+    background:var(--panel);color:var(--ink-dim);border:1px solid var(--line);border-bottom:2px solid transparent;
+    padding:8px 16px;cursor:pointer;display:flex;align-items:center;gap:8px}
+  .rc-tab:hover{color:var(--ink)}
+  .rc-tab.on{color:var(--ink);background:var(--panel-2);border-bottom-color:var(--flag-blue)}
+  .rc-tab .badge{font-family:var(--mono);font-size:10px;font-weight:400;letter-spacing:0;
+    background:var(--line);color:var(--ink-dim);padding:1px 6px;border-radius:2px}
+  .rc-tab .badge.hot{background:var(--flag-red);color:#fff}
+  .rc-tab:focus-visible{outline:2px solid var(--flag-blue);outline-offset:2px}
+
   .rc-setup{border:1px solid var(--line);background:var(--panel);padding:16px;margin-bottom:14px}
   .rc-setup-title{font-family:var(--disp);font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
   .rc-setup-sub{font-size:12px;color:var(--ink-dim);margin-bottom:14px;line-height:1.55}
@@ -70,6 +81,7 @@
   .rc-chip.on{color:var(--ink);border-color:var(--ink-dim);background:var(--panel-2)}
   .rc-chip .dot{display:inline-block;width:7px;height:7px;margin-right:6px;vertical-align:1px}
   .dot-red{background:var(--flag-red)} .dot-yellow{background:var(--flag-yellow)} .dot-green{background:var(--flag-green)}
+  .dot-orange{background:#FF4500} .dot-purple{background:#8A63D2}
 
   .rc-tally{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
   .rc-tile{background:var(--panel);border:1px solid var(--line);padding:7px 12px;display:flex;align-items:baseline;gap:8px}
@@ -79,16 +91,14 @@
 
   .rc-feed-label{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
     margin-bottom:8px;display:flex;justify-content:space-between}
-  .rc-board{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-  .rc-col-head.reddit{border-bottom-color:#FF4500}
-  .dot-orange{background:#FF4500}
-  .rc-rd-meta{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap}
-  .rc-rd-meta b{color:#FF4500;font-weight:500}
-  .rc-rd-sub{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#FF4500;margin-bottom:3px}
+  .rc-board{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
   .rc-col-head{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);
     display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+  .rc-col-head.reddit{border-bottom-color:#FF4500}
+  .rc-col-head.social{border-bottom-color:#8A63D2}
   .rc-col-head .dot{width:6px;height:6px;margin-right:6px}
   .rc-col-head .more{color:var(--ink-faint);font-weight:400;letter-spacing:.06em;text-transform:none}
+  .rc-confidence{font-size:10px;line-height:1.45;color:var(--ink-faint);font-style:italic;margin:-2px 0 7px;padding-left:2px}
   .rc-card{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);margin-bottom:5px;animation:rc-in .3s ease}
   @keyframes rc-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
   @media (prefers-reduced-motion:reduce){.rc-card{animation:none}.rc-lamp.busy{animation:none}}
@@ -96,6 +106,8 @@
   .rc-flag.red{background:var(--flag-red)} .rc-flag.yellow{background:var(--flag-yellow)} .rc-flag.green{background:var(--flag-green)}
   .rc-card-body{padding:8px 10px;flex:1;min-width:0}
   .rc-pub{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--flag-blue);margin-bottom:3px}
+  .rc-rd-sub{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#FF4500;margin-bottom:3px}
+  .rc-soc-plat{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#8A63D2;margin-bottom:3px}
   .rc-card-top{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:2px}
   .rc-tag{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:1px 5px;border:1px solid var(--line);color:var(--ink-dim)}
   .rc-time{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-left:auto}
@@ -107,11 +119,18 @@
   .rc-more-pubs{font-size:10px;color:var(--ink-faint);margin-top:5px;padding-top:5px;border-top:1px dashed var(--line);line-height:1.5}
   .rc-more-pubs a{color:var(--ink-dim);text-decoration:none}
   .rc-more-pubs a:hover{color:var(--flag-blue);text-decoration:underline}
+  .rc-rd-meta{font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:4px;display:flex;gap:10px;flex-wrap:wrap}
+  .rc-rd-meta b{color:#FF4500;font-weight:500}
+  .rc-fresh{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border:1px solid var(--line)}
+  .rc-fresh.f-now{color:var(--flag-green);border-color:var(--flag-green)}
+  .rc-fresh.f-week{color:var(--flag-yellow);border-color:var(--flag-yellow)}
+  .rc-fresh.f-old{color:var(--ink-faint)}
 
   .rc-empty,.rc-error{border:1px dashed var(--line);padding:28px 20px;text-align:center;color:var(--ink-dim);font-size:13px;line-height:1.6}
   .rc-error{border-color:var(--flag-red);color:var(--ink);text-align:left}
   .rc-error b{color:var(--flag-red)}
 
+  @media (max-width:1500px){ .rc-board{grid-template-columns:repeat(3,1fr)} }
   @media (max-width:1100px){ .rc-board{grid-template-columns:repeat(2,1fr)} }
   @media (max-width:640px){
     .rc-head{flex-direction:column}
@@ -120,6 +139,7 @@
     .rc-tally{grid-template-columns:1fr}
     .rc-chips{margin-left:0;width:100%}
     .rc-board{grid-template-columns:1fr}
+    .rc-tab{font-size:14px;padding:7px 11px}
   }
 </style>
 
@@ -128,8 +148,8 @@
   <div class="rc-head">
     <div class="rc-lamp setup" id="lamp"></div>
     <div class="rc-head-main">
-      <div class="rc-eyebrow" id="eyebrow">Standalone monitor · not configured</div>
-      <div class="rc-title">Race Control <span>/ live news feed</span></div>
+      <div class="rc-eyebrow" id="eyebrow">Multi-feed monitor · not configured</div>
+      <div class="rc-title">Race Control <span>/ media monitor</span></div>
     </div>
     <div class="rc-head-meta">
       <div class="rc-meta-row"><span>LAST SCAN</span><b id="lastScan">—</b></div>
@@ -141,11 +161,10 @@
   <div class="rc-setup" id="setup">
     <div class="rc-setup-title">Set up your keys</div>
     <div class="rc-setup-sub">
-      This is a standalone file — it calls Anthropic and Slack directly from your browser using your own credentials.
-      Nothing is sent anywhere except those two services. Get an Anthropic key at
-      <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>,
-      and a Slack bot token (scope <code>channels:history</code>, plus <code>groups:history</code> for private channels)
-      from <a href="https://api.slack.com/apps" target="_blank" rel="noopener">api.slack.com/apps</a>.
+      Calls Anthropic and Slack directly from your browser using your own credentials. Nothing is sent anywhere else.
+      Anthropic key: <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>.
+      Slack bot token: scopes <code>channels:history</code> + <code>groups:history</code> (private channels), then
+      <b>reinstall the app</b> and invite the bot to each monitored channel.
     </div>
     <div class="rc-setup-row">
       <div class="rc-field">
@@ -157,26 +176,24 @@
         <input type="password" id="slackTok" placeholder="xoxb-...">
       </div>
     </div>
-    <div class="rc-field">
-      <label for="channelId">Slack channel ID</label>
-      <input type="text" id="channelId" placeholder="C0BE29CJUCT" value="C0BE29CJUCT">
-    </div>
-    <label class="rc-remember"><input type="checkbox" id="remember"> Remember these on this device (stored only in this browser's local storage)</label>
+    <label class="rc-remember"><input type="checkbox" id="remember"> Remember these on this device (this browser's local storage only)</label>
     <div class="rc-setup-actions">
       <button class="rc-btn" id="saveKeys">Save &amp; connect</button>
       <button class="rc-btn ghost" id="forgetKeys">Forget saved keys</button>
     </div>
-    <div class="rc-setup-note">Keys never leave your browser except in direct requests to api.anthropic.com and slack.com — this file has no server of its own.</div>
+    <div class="rc-setup-note">Keys never leave your browser except in direct requests to api.anthropic.com and slack.com.</div>
   </div>
 
   <div id="mainUi" style="display:none">
+    <div class="rc-tabs" id="tabs" role="tablist"></div>
+
     <div class="rc-ctrl">
       <button class="rc-btn" id="scanBtn">Scan now</button>
       <select class="rc-sel" id="interval" aria-label="Auto-refresh interval">
         <option value="0">Auto-refresh: off</option>
-        <option value="60" selected>Auto-refresh: 1 min</option>
+        <option value="60">Auto-refresh: 1 min</option>
         <option value="120">Auto-refresh: 2 min</option>
-        <option value="300">Auto-refresh: 5 min</option>
+        <option value="300" selected>Auto-refresh: 5 min</option>
         <option value="600">Auto-refresh: 10 min</option>
         <option value="900">Auto-refresh: 15 min</option>
         <option value="1200">Auto-refresh: 20 min</option>
@@ -197,9 +214,9 @@
       <div class="rc-tile green"><span class="n" id="nRout">0</span><span class="l">Green · routine</span></div>
     </div>
 
-    <div class="rc-feed-label"><span>Flags + Reddit trending, top 5 each</span><span id="feedNote"></span></div>
+    <div class="rc-feed-label"><span id="boardLabel">Flags + Reddit + social, top 5 each</span><span id="feedNote"></span></div>
     <div id="feed">
-      <div class="rc-empty">No messages scanned yet. Press <b>Scan now</b> to pull the latest from the channel.</div>
+      <div class="rc-empty">No messages scanned yet. Press <b>Scan now</b>.</div>
     </div>
   </div>
 
@@ -208,20 +225,51 @@
 <script>
 (() => {
   const MODEL = "claude-haiku-4-5-20251001";
-  const LS_KEY = "rc_monitor_keys_v1";
+  const LS_KEY = "rc_monitor_keys_v2";
+  const CAP = 5;
 
-  const items = new Map();
-  let redditPosts = [];
-  let redditError = null;
-  let hasScanned = false;
+  // ── feed roster ─────────────────────────────────────
+  const FEEDS = [
+    { id:"f1",      label:"F1",           channel:"C0BE29CJUCT",
+      context:"Formula 1 — commercial sponsorship, regulation, team and driver news",
+      subs:["formula1","F1Technical","motorsports"],
+      social:"Formula 1" },
+    { id:"wrc",     label:"WRC",          channel:"C05UQ58MBB4",
+      context:"World Rally Championship — events, regulation, teams, manufacturers",
+      subs:["WRC","rally"],
+      social:"World Rally Championship rally" },
+    { id:"wec",     label:"WEC",          channel:"C04UJ1VR17X",
+      context:"World Endurance Championship / Le Mans — hypercar, manufacturers, regulation",
+      subs:["wec","lemans","endurance"],
+      social:"World Endurance Championship Le Mans Hypercar" },
+    { id:"ferrari", label:"Ferrari Corp", channel:"C0C61FJ9NTS",
+      context:"Ferrari corporate and luxury-brand news — financials, leadership, brand, road cars, luxury peer set",
+      subs:["ferrari"],
+      social:"Ferrari brand corporate luxury" },
+    { id:"mclaren", label:"McLaren Corp", channel:"C0A37PH3TBM",
+      context:"McLaren corporate and brand news — ownership, leadership, partners, automotive and racing business",
+      subs:["McLaren"],
+      social:"McLaren brand corporate" }
+  ];
+
+  // ── per-feed state ──────────────────────────────────
+  const state = {};
+  for (const f of FEEDS) state[f.id] = {
+    items:new Map(), reddit:[], redditError:null,
+    social:[], socialError:null, scanned:false, lastScan:null
+  };
+  let activeId = FEEDS[0].id;
+
   const filters = new Set(["critical","notable","routine"]);
   let timer = null, countdown = null, nextAt = null, scanning = false;
-  let ANTH_KEY = "", SLACK_TOK = "", CHANNEL = "";
+  let ANTH_KEY = "", SLACK_TOK = "";
 
   const $ = id => document.getElementById(id);
   const lamp = $("lamp"), feed = $("feed");
-  const RANK = { critical:0, notable:1, routine:2 };
   const FLAG = { critical:"red", notable:"yellow", routine:"green" };
+
+  const feedById = id => FEEDS.find(f => f.id === id);
+  const cur = () => state[activeId];
 
   function setLamp(s){ lamp.className = "rc-lamp " + s; }
   function esc(s){ const d=document.createElement("div"); d.textContent = s==null?"":String(s); return d.innerHTML; }
@@ -231,147 +279,6 @@
     if (!isFinite(n)) return ts || "";
     return new Date(n*1000).toLocaleString("en-GB",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"});
   }
-
-  // ── credentials ──────────────────────────────────────
-  function loadSaved(){
-    try{
-      const raw = localStorage.getItem(LS_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch { return null; }
-  }
-  function saveCreds(remember){
-    if (remember){
-      localStorage.setItem(LS_KEY, JSON.stringify({ a: ANTH_KEY, s: SLACK_TOK, c: CHANNEL }));
-    } else {
-      localStorage.removeItem(LS_KEY);
-    }
-  }
-
-  function enterMainUi(){
-    $("setup").style.display = "none";
-    $("mainUi").style.display = "";
-    $("eyebrow").textContent = "Channel monitor · " + CHANNEL;
-    setLamp("ok");
-    schedule();
-    scan();
-  }
-
-  $("saveKeys").addEventListener("click", () => {
-    ANTH_KEY = $("anthKey").value.trim();
-    SLACK_TOK = $("slackTok").value.trim();
-    CHANNEL = $("channelId").value.trim();
-    if (!ANTH_KEY || !SLACK_TOK || !CHANNEL){
-      alert("All three fields are required: Anthropic key, Slack token, and channel ID.");
-      return;
-    }
-    saveCreds($("remember").checked);
-    enterMainUi();
-  });
-
-  $("forgetKeys").addEventListener("click", () => {
-    localStorage.removeItem(LS_KEY);
-    $("anthKey").value = ""; $("slackTok").value = ""; $("remember").checked = false;
-  });
-
-  $("editKeys").addEventListener("click", () => {
-    clearInterval(timer); clearInterval(countdown);
-    $("mainUi").style.display = "none";
-    $("setup").style.display = "";
-    setLamp("setup");
-  });
-
-  (function init(){
-    const saved = loadSaved();
-    if (saved && saved.a && saved.s && saved.c){
-      $("anthKey").value = saved.a; $("slackTok").value = saved.s; $("channelId").value = saved.c;
-      $("remember").checked = true;
-      ANTH_KEY = saved.a; SLACK_TOK = saved.s; CHANNEL = saved.c;
-      enterMainUi();
-    }
-  })();
-
-  // ── rendering ────────────────────────────────────────
-  async function fetchReddit(){
-    const subs = ["formula1", "F1Technical", "motorsports"];
-    try{
-      const rPrompt = `Search the web for the current top/hot discussion threads from these subreddits: ${subs.map(s=>"r/"+s).join(", ")}. Focus on what is actively being discussed right now.
-
-Respond with ONLY a JSON array (no markdown fences, no commentary), up to 5 elements, ordered by how much engagement/discussion each has:
-{
-  "title": "<the thread title>",
-  "sub": "<subreddit name without the r/ prefix>",
-  "score": <upvote count as a number, or null if unknown>,
-  "comments": <comment count as a number, or null if unknown>,
-  "url": "<direct link to the reddit thread>"
-}
-
-If you cannot find current threads, return [].`;
-
-      const r = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": ANTH_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          max_tokens: 1500,
-          messages: [{ role:"user", content: rPrompt }],
-          tools: [{ type: "web_search_20250305", name: "web_search" }]
-        })
-      });
-      const data = await r.json();
-      if (data.error) throw new Error(data.error.message || "API error");
-
-      const text = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n")
-        .replace(/```json|```/g,"").trim();
-      const arr = extractJsonArray(text);
-      if (!arr) throw new Error("Could not parse the Reddit results.");
-
-      redditPosts = arr.filter(p => p && p.title).map(p => ({
-        title: p.title,
-        sub: p.sub || "formula1",
-        score: typeof p.score === "number" ? p.score : null,
-        comments: typeof p.comments === "number" ? p.comments : null,
-        url: p.url || null
-      }));
-      redditError = null;
-    } catch(e){
-      redditError = e.message || "Reddit lookup failed";
-    }
-  }
-
-  function redditColHtml(){
-    let h = `<div class="rc-col-head reddit"><span><span class="dot dot-orange"></span>Trending — Reddit</span></div>`;
-    if (redditError){
-      h += `<div class="rc-empty" style="padding:16px 10px">${esc(redditError)}</div>`;
-      return h;
-    }
-    if (!redditPosts.length){
-      h += `<div class="rc-empty" style="padding:16px 10px">None yet</div>`;
-      return h;
-    }
-    for (const p of redditPosts.slice(0,5)){
-      const bits = [];
-      if (p.score != null) bits.push(`<span><b>▲ ${p.score.toLocaleString()}</b></span>`);
-      if (p.comments != null) bits.push(`<span>${p.comments.toLocaleString()} comments</span>`);
-      h += `
-      <article class="rc-card">
-        <div class="rc-flag" style="background:#FF4500"></div>
-        <div class="rc-card-body">
-          <div class="rc-rd-sub">r/${esc(p.sub)}</div>
-          <div class="rc-hl">${esc(p.title)}</div>
-          ${bits.length ? `<div class="rc-rd-meta">${bits.join("")}</div>` : ""}
-          ${p.url ? `<a class="rc-link" href="${esc(p.url)}" target="_blank" rel="noopener">Open thread ↗</a>` : ""}
-        </div>
-      </article>`;
-    }
-    return h;
-  }
-
   function pubFromUrl(url){
     if (!url) return null;
     try{
@@ -379,86 +286,6 @@ If you cannot find current threads, return [].`;
       h = h.split(".")[0];
       return h.charAt(0).toUpperCase() + h.slice(1);
     } catch { return null; }
-  }
-
-  function render(){
-    const list = [...items.values()].sort((a,b)=> parseFloat(b.ts)-parseFloat(a.ts));
-    $("itemCount").textContent = list.length;
-    $("nCrit").textContent = list.filter(i=>i.importance==="critical").length;
-    $("nNote").textContent = list.filter(i=>i.importance==="notable").length;
-    $("nRout").textContent = list.filter(i=>i.importance==="routine").length;
-
-    const shown = list.filter(i=>filters.has(i.importance));
-    if (!hasScanned){
-      feed.innerHTML = '<div class="rc-empty">No messages scanned yet. Press <b>Scan now</b> to pull the latest from the channel.</div>';
-      return;
-    }
-
-    const COL_LABEL = { critical:"Red flag — critical", notable:"Yellow — notable", routine:"Green — routine" };
-    const CAP = 5;
-    const byTier = { critical:[], notable:[], routine:[] };
-    for (const i of shown) byTier[i.importance]?.push(i);
-
-    const colHtml = tier => {
-      const arr = byTier[tier];
-      const extra = arr.length - CAP;
-      let h = `<div class="rc-col-head"><span><span class="dot dot-${FLAG[tier]}"></span>${esc(COL_LABEL[tier])}</span>${extra>0?`<span class="more">+${extra} more</span>`:""}</div>`;
-      if (!arr.length){ h += `<div class="rc-empty" style="padding:16px 10px">None</div>`; return h; }
-      for (const i of arr.slice(0, CAP)){
-        const pub = pubFromUrl(i.url);
-        const others = Array.isArray(i.otherUrls) ? i.otherUrls.filter(Boolean) : [];
-        h += `
-      <article class="rc-card">
-        <div class="rc-flag ${FLAG[i.importance]||"green"}"></div>
-        <div class="rc-card-body">
-          ${pub ? `<div class="rc-pub">${esc(pub)}</div>` : ""}
-          <div class="rc-hl">${esc(i.headline||"(untitled)")}</div>
-          <div class="rc-card-top">
-            <span class="rc-tag">${esc(i.category||"news")}</span>
-            <span class="rc-time">${esc(tsToLocal(i.ts))}</span>
-          </div>
-          <div class="rc-sum">${esc(i.summary||"")}</div>
-          ${i.url ? `<a class="rc-link" href="${esc(i.url)}" target="_blank" rel="noopener">Open source article ↗</a>` : ""}
-          ${i.author ? `<div class="rc-src">via ${esc(i.author)}</div>` : ""}
-          ${others.length ? `<div class="rc-more-pubs">More coverage: ${others.map(u => {
-              const p = pubFromUrl(u);
-              return p ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(p)}</a>` : "";
-            }).filter(Boolean).join(", ")}</div>` : ""}
-        </div>
-      </article>`;
-      }
-      return h;
-    };
-
-    feed.innerHTML = `<div class="rc-board">
-      <div>${colHtml("critical")}</div>
-      <div>${colHtml("notable")}</div>
-      <div>${colHtml("routine")}</div>
-      <div>${redditColHtml()}</div>
-    </div>`;
-  }
-
-  function classifyError(e){
-    const msg = (e && e.message) ? e.message : String(e);
-    if (e instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(msg)){
-      return { kind:"NETWORK BLOCKED", detail: "The request never completed — check your internet connection or an ad-blocker/extension interfering with api.anthropic.com or slack.com." };
-    }
-    if (e && e.parseFailure) return { kind:"MALFORMED RESPONSE", detail: msg };
-    if (e && e.slackError) return { kind:"SLACK ERROR", detail: msg };
-    if (/overloaded|rate.?limit|429|529/i.test(msg)) return { kind:"API BUSY", detail: msg + " — temporary; it will retry on the next refresh." };
-    if (/invalid.?x-api-key|authentication_error|401/i.test(msg)) return { kind:"ANTHROPIC AUTH", detail: "Your Anthropic API key was rejected. Check it in Edit keys." };
-    return { kind:"API ERROR", detail: msg };
-  }
-
-  function showError(e){
-    setLamp("err");
-    $("feedNote").textContent = "last scan failed";
-    const c = classifyError(e);
-    const box = document.createElement("div");
-    box.className = "rc-error";
-    box.innerHTML = `<b>Scan failed — ${esc(c.kind)}.</b> ${esc(c.detail)}<br>The feed below is unchanged.`;
-    feed.prepend(box);
-    setTimeout(()=>box.remove(), 20000);
   }
 
   function extractJsonArray(text){
@@ -484,30 +311,117 @@ If you cannot find current threads, return [].`;
     return null;
   }
 
-  // Slack mrkdwn links look like <https://url|label> or <https://url>
+  async function anthropic(body){
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTH_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify(body)
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error.message || "API error");
+    return (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n")
+      .replace(/```json|```/g,"").trim();
+  }
+
+  // ── credentials ─────────────────────────────────────
+  function loadSaved(){
+    try{ const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
+  }
+  function saveCreds(remember){
+    if (remember) localStorage.setItem(LS_KEY, JSON.stringify({ a: ANTH_KEY, s: SLACK_TOK, f: activeId }));
+    else localStorage.removeItem(LS_KEY);
+  }
+
+  function enterMainUi(){
+    $("setup").style.display = "none";
+    $("mainUi").style.display = "";
+    renderTabs();
+    updateEyebrow();
+    setLamp("ok");
+    schedule();
+    scan();
+  }
+
+  function updateEyebrow(){
+    const f = feedById(activeId);
+    $("eyebrow").textContent = `${f.label} · ${f.channel}`;
+  }
+
+  $("saveKeys").addEventListener("click", () => {
+    ANTH_KEY = $("anthKey").value.trim();
+    SLACK_TOK = $("slackTok").value.trim();
+    if (!ANTH_KEY || !SLACK_TOK){ alert("Both the Anthropic key and the Slack token are required."); return; }
+    saveCreds($("remember").checked);
+    enterMainUi();
+  });
+  $("forgetKeys").addEventListener("click", () => {
+    localStorage.removeItem(LS_KEY);
+    $("anthKey").value = ""; $("slackTok").value = ""; $("remember").checked = false;
+  });
+  $("editKeys").addEventListener("click", () => {
+    clearInterval(timer); clearInterval(countdown);
+    $("mainUi").style.display = "none";
+    $("setup").style.display = "";
+    setLamp("setup");
+  });
+
+  // ── tabs ────────────────────────────────────────────
+  function renderTabs(){
+    const t = $("tabs");
+    t.innerHTML = FEEDS.map(f => {
+      const st = state[f.id];
+      const crit = [...st.items.values()].filter(i=>i.importance==="critical").length;
+      const total = st.items.size;
+      let badge = "";
+      if (st.scanned){
+        badge = crit > 0
+          ? `<span class="badge hot">${crit}</span>`
+          : `<span class="badge">${total}</span>`;
+      }
+      return `<button class="rc-tab ${f.id===activeId?"on":""}" data-feed="${f.id}" role="tab">${esc(f.label)}${badge}</button>`;
+    }).join("");
+    t.querySelectorAll(".rc-tab").forEach(btn => {
+      btn.addEventListener("click", () => switchFeed(btn.dataset.feed));
+    });
+  }
+
+  function switchFeed(id){
+    if (id === activeId) return;
+    activeId = id;
+    renderTabs();
+    updateEyebrow();
+    const st = cur();
+    $("lastScan").textContent = st.lastScan ? fmtTime(st.lastScan) : "—";
+    render();
+    if (!st.scanned) scan();
+  }
+
+  // ── slack ───────────────────────────────────────────
   function stripSlackLinks(text){
     const urls = [];
     const clean = text.replace(/<(https?:\/\/[^|>]+)(\|[^>]*)?>/g, (m, url) => { urls.push(url); return url; });
     return { clean, url: urls[0] || null };
   }
 
-  async function fetchSlackMessages(){
-    const body = new URLSearchParams({ token: SLACK_TOK, channel: CHANNEL, limit: "25" }).toString();
-    let r;
-    try{
-      r = await fetch("https://slack.com/api/conversations.history", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body
-      });
-    } catch(err){ throw err; } // network-level failure, let classifyError handle it
+  async function fetchSlackMessages(channel){
+    const body = new URLSearchParams({ token: SLACK_TOK, channel, limit: "25" }).toString();
+    const r = await fetch("https://slack.com/api/conversations.history", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body
+    });
     const data = await r.json();
     if (!data.ok){
       const e = new Error(
-        data.error === "not_in_channel" ? "The bot isn't a member of this channel — invite it first with /invite @yourbot." :
+        data.error === "not_in_channel" ? "The bot isn't in this channel — run /invite @yourbot there." :
         data.error === "invalid_auth" || data.error === "not_authed" ? "Slack rejected the token. Check it in Edit keys." :
-        data.error === "channel_not_found" ? "Channel ID not found or the bot has no access to it." :
-        data.error === "missing_scope" ? `Token is missing a scope: ${data.needed || "channels:history"}.` :
+        data.error === "channel_not_found" ? "Channel not found, or the bot has no access to it." :
+        data.error === "missing_scope" ? `Token missing scope: ${data.needed || "channels:history"} — add it and REINSTALL the app.` :
         `Slack API error: ${data.error}`
       );
       e.slackError = true;
@@ -515,82 +429,249 @@ If you cannot find current threads, return [].`;
     }
     return (data.messages || []).map(m => {
       const { clean, url } = stripSlackLinks(m.text || "");
-      return { ts: m.ts, text: clean, url, user: m.username || m.bot_profile?.name || m.user || null };
+      return { ts: m.ts, text: clean, url, user: m.username || (m.bot_profile && m.bot_profile.name) || m.user || null };
     });
   }
 
+  // ── reddit + social (server-side search, no CORS) ───
+  async function fetchReddit(f, st){
+    const subs = f.subs;
+    try{
+      if (!subs || !subs.length){ st.reddit = []; st.redditError = null; return; }
+      const text = await anthropic({
+        model: MODEL, max_tokens: 1500,
+        messages: [{ role:"user", content:
+`Search the web for the current top/hot discussion threads from these subreddits: ${subs.map(s=>"r/"+s).join(", ")}. Focus on what is actively being discussed right now.
+
+Respond with ONLY a JSON array (no markdown fences, no commentary), up to 5 elements, most discussed first:
+{"title":"<thread title>","sub":"<subreddit without r/>","score":<number or null>,"comments":<number or null>,"url":"<link to the thread>"}
+
+If you cannot find current threads, return [].` }],
+        tools: [{ type: "web_search_20250305", name: "web_search" }]
+      });
+      const arr = extractJsonArray(text);
+      if (!arr) throw new Error("Could not parse the Reddit results.");
+      st.reddit = arr.filter(p=>p && p.title).map(p => ({
+        title:p.title, sub:p.sub || subs[0],
+        score: typeof p.score === "number" ? p.score : null,
+        comments: typeof p.comments === "number" ? p.comments : null,
+        url: p.url || null
+      }));
+      st.redditError = null;
+    } catch(e){ st.redditError = e.message || "Reddit lookup failed"; }
+  }
+
+  async function fetchSocial(f, st){
+    try{
+      const text = await anthropic({
+        model: MODEL, max_tokens: 1500,
+        messages: [{ role:"user", content:
+`Search the web for what is currently trending and going viral about "${f.social}" on X (Twitter) and TikTok right now — viral clips, memes, official posts, fan reactions, trending hashtags.
+
+Respond with ONLY a JSON array (no markdown fences, no commentary), up to 5 elements, most significant first:
+{"title":"<short description, max 12 words>","platform":"X" | "TikTok","detail":"<ONE sentence, max 20 words>","url":"<link or null>","freshness":"today" | "this week" | "older" | "unclear"}
+
+Set "freshness" honestly from the dates you actually find — never guess "today". If nothing credible, return [].` }],
+        tools: [{ type: "web_search_20250305", name: "web_search" }]
+      });
+      const arr = extractJsonArray(text);
+      if (!arr) throw new Error("Could not parse the social results.");
+      st.social = arr.filter(p=>p && p.title).map(p => ({
+        title:p.title,
+        platform: p.platform === "TikTok" ? "TikTok" : "X",
+        detail: p.detail || "",
+        url: p.url || null,
+        freshness: ["today","this week","older"].includes(p.freshness) ? p.freshness : "unclear"
+      }));
+      st.socialError = null;
+    } catch(e){ st.socialError = e.message || "Social lookup failed"; }
+  }
+
+  // ── column renderers ────────────────────────────────
+  function flagColHtml(tier, byTier){
+    const LABEL = { critical:"Red flag — critical", notable:"Yellow — notable", routine:"Green — routine" };
+    const arr = byTier[tier];
+    const extra = arr.length - CAP;
+    let h = `<div class="rc-col-head"><span><span class="dot dot-${FLAG[tier]}"></span>${esc(LABEL[tier])}</span>${extra>0?`<span class="more">+${extra} more</span>`:""}</div>`;
+    if (!arr.length){ h += `<div class="rc-empty" style="padding:16px 10px">None</div>`; return h; }
+    for (const i of arr.slice(0, CAP)){
+      const pub = pubFromUrl(i.url);
+      const others = Array.isArray(i.otherUrls) ? i.otherUrls.filter(Boolean) : [];
+      h += `
+      <article class="rc-card">
+        <div class="rc-flag ${FLAG[i.importance]||"green"}"></div>
+        <div class="rc-card-body">
+          ${pub ? `<div class="rc-pub">${esc(pub)}</div>` : ""}
+          <div class="rc-hl">${esc(i.headline||"(untitled)")}</div>
+          <div class="rc-card-top">
+            <span class="rc-tag">${esc(i.category||"news")}</span>
+            <span class="rc-time">${esc(tsToLocal(i.ts))}</span>
+          </div>
+          <div class="rc-sum">${esc(i.summary||"")}</div>
+          ${i.url ? `<a class="rc-link" href="${esc(i.url)}" target="_blank" rel="noopener">Open source article ↗</a>` : ""}
+          ${i.author ? `<div class="rc-src">via ${esc(i.author)}</div>` : ""}
+          ${others.length ? `<div class="rc-more-pubs">More coverage: ${others.map(u=>{
+              const p = pubFromUrl(u); return p ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(p)}</a>` : "";
+            }).filter(Boolean).join(", ")}</div>` : ""}
+        </div>
+      </article>`;
+    }
+    return h;
+  }
+
+  function redditColHtml(st){
+    let h = `<div class="rc-col-head reddit"><span><span class="dot dot-orange"></span>Trending — Reddit</span></div>`;
+    if (st.redditError){ h += `<div class="rc-empty" style="padding:16px 10px">${esc(st.redditError)}</div>`; return h; }
+    if (!st.reddit.length){ h += `<div class="rc-empty" style="padding:16px 10px">None yet</div>`; return h; }
+    for (const p of st.reddit.slice(0,CAP)){
+      const bits = [];
+      if (p.score != null) bits.push(`<span><b>▲ ${p.score.toLocaleString()}</b></span>`);
+      if (p.comments != null) bits.push(`<span>${p.comments.toLocaleString()} comments</span>`);
+      h += `
+      <article class="rc-card">
+        <div class="rc-flag" style="background:#FF4500"></div>
+        <div class="rc-card-body">
+          <div class="rc-rd-sub">r/${esc(p.sub)}</div>
+          <div class="rc-hl">${esc(p.title)}</div>
+          ${bits.length ? `<div class="rc-rd-meta">${bits.join("")}</div>` : ""}
+          ${p.url ? `<a class="rc-link" href="${esc(p.url)}" target="_blank" rel="noopener">Open thread ↗</a>` : ""}
+        </div>
+      </article>`;
+    }
+    return h;
+  }
+
+  function socialColHtml(st){
+    let h = `<div class="rc-col-head social"><span><span class="dot dot-purple"></span>Trending — X &amp; TikTok</span></div>`;
+    h += `<div class="rc-confidence">Search-derived, not platform APIs — directional only, verify before acting.</div>`;
+    if (st.socialError){ h += `<div class="rc-empty" style="padding:16px 10px">${esc(st.socialError)}</div>`; return h; }
+    if (!st.social.length){ h += `<div class="rc-empty" style="padding:16px 10px">None yet</div>`; return h; }
+    for (const p of st.social.slice(0,CAP)){
+      const cls = p.freshness === "today" ? "f-now" : (p.freshness === "this week" ? "f-week" : "f-old");
+      h += `
+      <article class="rc-card">
+        <div class="rc-flag" style="background:${p.platform === "TikTok" ? "#25F4EE" : "#8A63D2"}"></div>
+        <div class="rc-card-body">
+          <div class="rc-soc-plat">${esc(p.platform)}</div>
+          <div class="rc-hl">${esc(p.title)}</div>
+          ${p.detail ? `<div class="rc-sum">${esc(p.detail)}</div>` : ""}
+          <div class="rc-rd-meta"><span class="rc-fresh ${cls}">${esc(p.freshness)}</span></div>
+          ${p.url ? `<a class="rc-link" href="${esc(p.url)}" target="_blank" rel="noopener">Open ↗</a>` : ""}
+        </div>
+      </article>`;
+    }
+    return h;
+  }
+
+  function render(){
+    const st = cur();
+    const list = [...st.items.values()].sort((a,b)=> parseFloat(b.ts)-parseFloat(a.ts));
+    $("itemCount").textContent = list.length;
+    $("nCrit").textContent = list.filter(i=>i.importance==="critical").length;
+    $("nNote").textContent = list.filter(i=>i.importance==="notable").length;
+    $("nRout").textContent = list.filter(i=>i.importance==="routine").length;
+    $("boardLabel").textContent = `${feedById(activeId).label} — flags + Reddit + social, top ${CAP} each`;
+
+    if (!st.scanned){
+      feed.innerHTML = '<div class="rc-empty">No messages scanned yet. Press <b>Scan now</b>.</div>';
+      return;
+    }
+    const shown = list.filter(i=>filters.has(i.importance));
+    const byTier = { critical:[], notable:[], routine:[] };
+    for (const i of shown) if (byTier[i.importance]) byTier[i.importance].push(i);
+
+    feed.innerHTML = `<div class="rc-board">
+      <div>${flagColHtml("critical", byTier)}</div>
+      <div>${flagColHtml("notable", byTier)}</div>
+      <div>${flagColHtml("routine", byTier)}</div>
+      <div>${redditColHtml(st)}</div>
+      <div>${socialColHtml(st)}</div>
+    </div>`;
+    renderTabs();
+  }
+
+  function classifyError(e){
+    const msg = (e && e.message) ? e.message : String(e);
+    if (e instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(msg)){
+      return { kind:"NETWORK BLOCKED", detail:"The request never completed — check your connection, or an ad-blocker/shield interfering with api.anthropic.com or slack.com." };
+    }
+    if (e && e.parseFailure) return { kind:"MALFORMED RESPONSE", detail: msg };
+    if (e && e.slackError) return { kind:"SLACK ERROR", detail: msg };
+    if (/overloaded|rate.?limit|429|529/i.test(msg)) return { kind:"API BUSY", detail: msg + " — temporary; retries next refresh." };
+    if (/invalid.?x-api-key|authentication_error|401/i.test(msg)) return { kind:"ANTHROPIC AUTH", detail:"Your Anthropic API key was rejected. Check it in Edit keys." };
+    return { kind:"API ERROR", detail: msg };
+  }
+
+  function showError(e){
+    setLamp("err");
+    $("feedNote").textContent = "last scan failed";
+    const c = classifyError(e);
+    const box = document.createElement("div");
+    box.className = "rc-error";
+    box.innerHTML = `<b>Scan failed — ${esc(c.kind)}.</b> ${esc(c.detail)}<br>The board below is unchanged.`;
+    feed.prepend(box);
+    setTimeout(()=>box.remove(), 20000);
+  }
+
+  // ── scan ────────────────────────────────────────────
   async function scan(){
     if (scanning) return;
+    const f = feedById(activeId), st = state[activeId];
     scanning = true;
-    hasScanned = true;
+    st.scanned = true;
     setLamp("busy");
     $("scanBtn").disabled = true;
     $("feedNote").textContent = "scanning…";
 
     try{
-      const [msgs] = await Promise.all([ fetchSlackMessages(), fetchReddit() ]);
-      if (!msgs.length){
-        $("lastScan").textContent = fmtTime(new Date());
-        $("feedNote").textContent = "channel empty";
-        setLamp("ok");
-        render();
-        return;
-      }
+      const [msgs] = await Promise.all([
+        fetchSlackMessages(f.channel),
+        fetchReddit(f, st),
+        fetchSocial(f, st)
+      ]);
 
-      const msgBlock = msgs.map(m => `ts=${m.ts} | text="${(m.text||"").replace(/"/g,"'").slice(0,300)}"${m.url?` | url=${m.url}`:""}${m.user?` | from=${m.user}`:""}`).join("\n");
+      if (msgs.length){
+        const msgBlock = msgs.map(m =>
+          `ts=${m.ts} | text="${(m.text||"").replace(/"/g,"'").slice(0,300)}"${m.url?` | url=${m.url}`:""}${m.user?` | from=${m.user}`:""}`
+        ).join("\n");
 
-      const prompt = `Here are recent Slack messages from a news-monitoring channel:
+        const text = await anthropic({
+          model: MODEL, max_tokens: 4000,
+          messages: [{ role:"user", content:
+`Here are recent Slack messages from a media-monitoring channel covering: ${f.context}.
 
 ${msgBlock}
 
-Respond with ONLY a JSON array (no markdown fences, no commentary, no text before or after). For each DISTINCT news story (skip pure chatter, joins/leaves, empty messages), produce:
-{
-  "ts": "<the ts of the EARLIEST message reporting this story>",
-  "headline": "<punchy headline, max 10 words>",
-  "summary": "<ONE short sentence, max 25 words>",
-  "importance": "critical" | "notable" | "routine",
-  "category": "<one short lowercase tag, e.g. f1, fia, sponsor, ev, mobility, business>",
-  "url": "<the url of the earliest message, else null>",
-  "author": "<the from field of the earliest message, else null>",
-  "otherUrls": ["<url of each OTHER message reporting the same story>", ...]
-}
+Respond with ONLY a JSON array (no markdown fences, no commentary). For each DISTINCT news story (skip chatter, joins/leaves, empty messages):
+{"ts":"<ts of the EARLIEST message for this story>","headline":"<max 10 words>","summary":"<ONE sentence, max 25 words>","importance":"critical"|"notable"|"routine","category":"<one short lowercase tag>","url":"<url of the earliest message or null>","author":"<from field or null>","otherUrls":["<url of each OTHER message on the same story>"]}
 
-IMPORTANT — merge duplicates: if several messages report the same underlying story (e.g. the same transfer rumor or announcement picked up by different outlets), output ONE entry for it, not one per message. Use the earliest ts and url as the main entry, and list every other message's url in "otherUrls" (omit or use [] if there are none). Keep every field brief.
+MERGE DUPLICATES: if several messages report the same underlying story, output ONE entry — earliest ts and url as the main entry, every other url in "otherUrls".
 
-Importance rubric: "critical" = major breaking news, regulatory decisions, big sponsor deals signed/lost, leadership changes; "notable" = meaningful developments worth reading today; "routine" = minor updates, incremental coverage. If nothing qualifies, return [].`;
+Importance, judged within the context above: "critical" = major breaking news, regulatory decisions, big commercial deals signed/lost, leadership changes; "notable" = meaningful developments worth reading today; "routine" = minor or incremental coverage. Keep fields brief. If nothing qualifies, return [].` }]
+        });
 
-      const r = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": ANTH_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true"
-        },
-        body: JSON.stringify({ model: MODEL, max_tokens: 4000, messages: [{ role:"user", content: prompt }] })
-      });
-      const data = await r.json();
-      if (data.error) throw new Error(data.error.message || "Anthropic API error");
+        const arr = extractJsonArray(text);
+        if (!arr){
+          const snip = text.slice(0,220).trim();
+          const err = new Error("Could not parse the channel scan response." + (snip?` Model returned: "${snip}${text.length>220?"…":""}"`:" Response was empty."));
+          err.parseFailure = true;
+          throw err;
+        }
 
-      const text = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n").replace(/```json|```/g,"").trim();
-      const arr = extractJsonArray(text);
-      if (!arr){
-        const snippet = text.slice(0, 220).trim();
-        const e = new Error("Could not parse the summary response." + (snippet ? ` Model returned: "${snippet}${text.length>220?"…":""}"` : " Response was empty."));
-        e.parseFailure = true;
-        throw e;
+        let added = 0;
+        for (const it of arr){
+          if (!it || !it.ts) continue;
+          if (!["critical","notable","routine"].includes(it.importance)) it.importance = "routine";
+          if (!st.items.has(String(it.ts))) added++;
+          st.items.set(String(it.ts), it);
+        }
+        $("feedNote").textContent = added ? `+${added} new` : "no new items";
+      } else {
+        $("feedNote").textContent = "channel empty";
       }
 
-      let added = 0;
-      for (const it of arr){
-        if (!it || !it.ts) continue;
-        if (!["critical","notable","routine"].includes(it.importance)) it.importance = "routine";
-        if (!items.has(it.ts)) added++;
-        items.set(String(it.ts), it);
-      }
-
-      $("lastScan").textContent = fmtTime(new Date());
-      $("feedNote").textContent = added ? `+${added} new` : "no new items";
+      st.lastScan = new Date();
+      $("lastScan").textContent = fmtTime(st.lastScan);
       setLamp("ok");
       render();
     } catch(e){
@@ -624,7 +705,7 @@ Importance rubric: "critical" = major breaking news, regulatory decisions, big s
       if (f === "all"){
         const allOn = filters.size === 3;
         filters.clear();
-        if (!allOn){ ["critical","notable","routine"].forEach(x=>filters.add(x)); }
+        if (!allOn) ["critical","notable","routine"].forEach(x=>filters.add(x));
         document.querySelectorAll(".rc-chip").forEach(c=>c.classList.toggle("on", !allOn));
       } else {
         filters.has(f) ? filters.delete(f) : filters.add(f);
@@ -635,10 +716,19 @@ Importance rubric: "critical" = major breaking news, regulatory decisions, big s
     });
   });
 
+  (function init(){
+    const saved = loadSaved();
+    if (saved && saved.a && saved.s){
+      $("anthKey").value = saved.a; $("slackTok").value = saved.s;
+      $("remember").checked = true;
+      ANTH_KEY = saved.a; SLACK_TOK = saved.s;
+      if (saved.f && feedById(saved.f)) activeId = saved.f;
+      enterMainUi();
+    }
+  })();
+
   if ("serviceWorker" in navigator){
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("sw.js").catch(()=>{});
-    });
+    window.addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(()=>{}); });
   }
 })();
 </script>

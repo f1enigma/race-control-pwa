@@ -1,7 +1,7 @@
 {
-  "name": "Race Control — F1 News Monitor",
+  "name": "Race Control — Media Monitor",
   "short_name": "Race Control",
-  "description": "Live flagged news monitor for the F1 media intelligence pipeline",
+  "description": "Multi-feed media monitor: F1, WRC, WEC, Ferrari Corporate, McLaren Corporate",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
