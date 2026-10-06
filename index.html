@@ -91,7 +91,29 @@
 
   .rc-feed-label{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);
     margin-bottom:8px;display:flex;justify-content:space-between}
-  .rc-board{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  /* ── persistent ALL-feeds critical rail ───────────── */
+  .rc-layout{display:grid;grid-template-columns:300px 1fr;gap:12px;align-items:start}
+  .rc-rail{position:sticky;top:8px;border:1px solid var(--flag-red);background:var(--panel);padding:8px}
+  .rc-rail-head{font-family:var(--disp);font-size:16px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--flag-red);display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+  .rc-rail-head .n{font-family:var(--mono);font-size:11px;background:var(--flag-red);color:#fff;padding:1px 7px;font-weight:400}
+  .rc-rail-sub{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);
+    margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .rc-rail-body{max-height:calc(100vh - 150px);overflow-y:auto}
+  .rc-rail-card{background:var(--panel-2);border-left:3px solid var(--flag-red);padding:7px 9px;margin-bottom:6px}
+  .rc-rail-card .hl{font-family:var(--disp);font-size:14px;font-weight:600;line-height:1.2;margin-bottom:3px}
+  .rc-rail-card .sum{font-size:11px;line-height:1.35;color:var(--ink-dim);margin-bottom:4px}
+  .rc-rail-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .rc-badge{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;color:#0C0E12;font-weight:500}
+  .b-f1{background:#E8412C} .b-wrc{background:#F5C518} .b-wec{background:#3D9BE9}
+  .b-ferrari{background:#FF4500} .b-mclaren{background:#2FBF71}
+  .rc-rail-time{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-left:auto}
+  .rc-rail-card a{font-family:var(--mono);font-size:10px;color:var(--flag-blue);text-decoration:none}
+  .rc-rail-card a:hover{text-decoration:underline}
+  .rc-rail-empty{font-size:11px;color:var(--ink-faint);padding:14px 6px;text-align:center;line-height:1.5}
+  .rc-rail-note{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:8px;padding-top:6px;border-top:1px dashed var(--line);line-height:1.5}
+
+  .rc-board{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
   .rc-col-head{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);
     display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--line)}
   .rc-col-head.reddit{border-bottom-color:#FF4500}
@@ -130,8 +152,13 @@
   .rc-error{border-color:var(--flag-red);color:var(--ink);text-align:left}
   .rc-error b{color:var(--flag-red)}
 
-  @media (max-width:1500px){ .rc-board{grid-template-columns:repeat(3,1fr)} }
-  @media (max-width:1100px){ .rc-board{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:1500px){ .rc-board{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:1100px){
+    .rc-layout{grid-template-columns:1fr}
+    .rc-rail{position:static}
+    .rc-rail-body{max-height:260px}
+    .rc-board{grid-template-columns:repeat(2,1fr)}
+  }
   @media (max-width:640px){
     .rc-head{flex-direction:column}
     .rc-lamp{width:100%;height:6px}
@@ -199,10 +226,10 @@
         <option value="1200">Auto-refresh: 20 min</option>
         <option value="1800">Auto-refresh: 30 min</option>
       </select>
+      <button class="rc-btn ghost" id="scanAllBtn">Scan all</button>
       <button class="rc-btn ghost" id="editKeys">Edit keys</button>
-      <div class="rc-chips" role="group" aria-label="Filter by priority">
+      <div class="rc-chips" role="group" aria-label="Filter board columns">
         <button class="rc-chip on" data-f="all">ALL</button>
-        <button class="rc-chip on" data-f="critical"><span class="dot dot-red"></span>RED FLAG</button>
         <button class="rc-chip on" data-f="notable"><span class="dot dot-yellow"></span>YELLOW</button>
         <button class="rc-chip on" data-f="routine"><span class="dot dot-green"></span>GREEN</button>
       </div>
@@ -261,7 +288,7 @@
   let activeId = FEEDS[0].id;
 
   const filters = new Set(["critical","notable","routine"]);
-  let timer = null, countdown = null, nextAt = null, scanning = false;
+  let timer = null, countdown = null, nextAt = null, scanning = false, rotation = 0;
   let ANTH_KEY = "", SLACK_TOK = "";
 
   const $ = id => document.getElementById(id);
@@ -563,6 +590,45 @@ Set "freshness" honestly from the dates you actually find — never guess "today
     return h;
   }
 
+  // ── ALL-feeds critical rail (pinned, never changes with the tab) ──
+  function railHtml(){
+    const all = [];
+    for (const f of FEEDS){
+      for (const i of state[f.id].items.values()){
+        if (i.importance === "critical") all.push({ ...i, feedId:f.id, feedLabel:f.label });
+      }
+    }
+    all.sort((a,b)=> parseFloat(b.ts)-parseFloat(a.ts));
+
+    const unscanned = FEEDS.filter(f => !state[f.id].scanned);
+    let h = `<div class="rc-rail">
+      <div class="rc-rail-head"><span>All · Critical</span><span class="n">${all.length}</span></div>
+      <div class="rc-rail-sub">Every feed · red flag only</div>
+      <div class="rc-rail-body">`;
+
+    if (!all.length){
+      h += `<div class="rc-rail-empty">No critical items across any feed.</div>`;
+    } else {
+      for (const i of all){
+        h += `<div class="rc-rail-card">
+          <div class="hl">${esc(i.headline||"(untitled)")}</div>
+          <div class="sum">${esc(i.summary||"")}</div>
+          <div class="rc-rail-meta">
+            <span class="rc-badge b-${i.feedId}">${esc(i.feedLabel)}</span>
+            ${i.url ? `<a href="${esc(i.url)}" target="_blank" rel="noopener">Open ↗</a>` : ""}
+            <span class="rc-rail-time">${esc(tsToLocal(i.ts))}</span>
+          </div>
+        </div>`;
+      }
+    }
+    h += `</div>`;
+    if (unscanned.length){
+      h += `<div class="rc-rail-note">Not yet scanned: ${unscanned.map(f=>esc(f.label)).join(", ")} — press Scan all.</div>`;
+    }
+    h += `</div>`;
+    return h;
+  }
+
   function render(){
     const st = cur();
     const list = [...st.items.values()].sort((a,b)=> parseFloat(b.ts)-parseFloat(a.ts));
@@ -570,23 +636,23 @@ Set "freshness" honestly from the dates you actually find — never guess "today
     $("nCrit").textContent = list.filter(i=>i.importance==="critical").length;
     $("nNote").textContent = list.filter(i=>i.importance==="notable").length;
     $("nRout").textContent = list.filter(i=>i.importance==="routine").length;
-    $("boardLabel").textContent = `${feedById(activeId).label} — flags + Reddit + social, top ${CAP} each`;
+    $("boardLabel").textContent = `${feedById(activeId).label} — board · critical pinned left across all feeds`;
 
-    if (!st.scanned){
-      feed.innerHTML = '<div class="rc-empty">No messages scanned yet. Press <b>Scan now</b>.</div>';
-      return;
-    }
-    const shown = list.filter(i=>filters.has(i.importance));
-    const byTier = { critical:[], notable:[], routine:[] };
-    for (const i of shown) if (byTier[i.importance]) byTier[i.importance].push(i);
+    const boardInner = !st.scanned
+      ? '<div class="rc-empty">No messages scanned yet for this feed. Press <b>Scan now</b>.</div>'
+      : (() => {
+          const shown = list.filter(i=>filters.has(i.importance));
+          const byTier = { critical:[], notable:[], routine:[] };
+          for (const i of shown) if (byTier[i.importance]) byTier[i.importance].push(i);
+          return `<div class="rc-board">
+            <div>${flagColHtml("notable", byTier)}</div>
+            <div>${flagColHtml("routine", byTier)}</div>
+            <div>${redditColHtml(st)}</div>
+            <div>${socialColHtml(st)}</div>
+          </div>`;
+        })();
 
-    feed.innerHTML = `<div class="rc-board">
-      <div>${flagColHtml("critical", byTier)}</div>
-      <div>${flagColHtml("notable", byTier)}</div>
-      <div>${flagColHtml("routine", byTier)}</div>
-      <div>${redditColHtml(st)}</div>
-      <div>${socialColHtml(st)}</div>
-    </div>`;
+    feed.innerHTML = `<div class="rc-layout">${railHtml()}<div>${boardInner}</div></div>`;
     renderTabs();
   }
 
@@ -688,7 +754,18 @@ Importance, judged within the context above: "critical" = major breaking news, r
     const secs = parseInt($("interval").value, 10);
     if (!secs){ $("nextScan").textContent = "manual"; nextAt = null; return; }
     nextAt = Date.now() + secs*1000;
-    timer = setInterval(()=>{ nextAt = Date.now() + secs*1000; scan(); }, secs*1000);
+    timer = setInterval(async ()=>{
+      nextAt = Date.now() + secs*1000;
+      await scan();
+      // Keep the ALL/Critical rail fresh: refresh one other feed per tick, round-robin.
+      const others = FEEDS.filter(f => f.id !== activeId);
+      if (others.length){
+        const f = others[rotation++ % others.length];
+        const keep = activeId;
+        activeId = f.id;
+        try { await scan(); } finally { activeId = keep; updateEyebrow(); render(); }
+      }
+    }, secs*1000);
     countdown = setInterval(()=>{
       if (!nextAt) return;
       const left = Math.max(0, Math.round((nextAt - Date.now())/1000));
@@ -699,19 +776,41 @@ Importance, judged within the context above: "critical" = major breaking news, r
   $("scanBtn").addEventListener("click", ()=>{ scan(); if (nextAt){ const s=parseInt($("interval").value,10); nextAt = Date.now()+s*1000; } });
   $("interval").addEventListener("change", schedule);
 
+  // Scan every feed in sequence, so the ALL/Critical rail is fully populated.
+  $("scanAllBtn").addEventListener("click", async () => {
+    const btn = $("scanAllBtn");
+    btn.disabled = true;
+    const original = activeId;
+    try{
+      for (const f of FEEDS){
+        activeId = f.id;
+        $("feedNote").textContent = `scanning ${f.label}…`;
+        await scan();
+      }
+    } finally {
+      activeId = original;
+      btn.disabled = false;
+      updateEyebrow();
+      render();
+    }
+  });
+
+  const TOGGLEABLE = ["notable","routine"];
+  const allTiersOn = () => TOGGLEABLE.every(t => filters.has(t));
+
   document.querySelectorAll(".rc-chip").forEach(ch=>{
     ch.addEventListener("click", ()=>{
       const f = ch.dataset.f;
       if (f === "all"){
-        const allOn = filters.size === 3;
-        filters.clear();
-        if (!allOn) ["critical","notable","routine"].forEach(x=>filters.add(x));
-        document.querySelectorAll(".rc-chip").forEach(c=>c.classList.toggle("on", !allOn));
+        const on = allTiersOn();
+        TOGGLEABLE.forEach(t => on ? filters.delete(t) : filters.add(t));
+        document.querySelectorAll(".rc-chip").forEach(c=>c.classList.toggle("on", !on));
       } else {
         filters.has(f) ? filters.delete(f) : filters.add(f);
         ch.classList.toggle("on", filters.has(f));
-        document.querySelector('[data-f="all"]').classList.toggle("on", filters.size===3);
+        document.querySelector('[data-f="all"]').classList.toggle("on", allTiersOn());
       }
+      filters.add("critical"); // rail is never filtered out
       render();
     });
   });
