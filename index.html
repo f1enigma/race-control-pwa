@@ -275,14 +275,8 @@
 
     <div class="rc-ctrl">
       <button class="rc-btn" id="scanBtn">Scan now</button>
-      <select class="rc-sel" id="interval" aria-label="Auto-refresh interval">
-        <option value="0">Auto-refresh: off</option>
-        <option value="60">Auto-refresh: 1 min</option>
-        <option value="120">Auto-refresh: 2 min</option>
-        <option value="300" selected>Auto-refresh: 5 min</option>
-        <option value="600">Auto-refresh: 10 min</option>
-        <option value="900">Auto-refresh: 15 min</option>
-        <option value="1200">Auto-refresh: 20 min</option>
+      <select class="rc-sel" id="interval" aria-label="Auto-refresh interval" autocomplete="off">
+        <option value="0" selected>Auto-refresh: off</option>
         <option value="1800">Auto-refresh: 30 min</option>
       </select>
       <button class="rc-btn ghost" id="scanAllBtn">Scan all</button>
@@ -340,10 +334,14 @@
   ];
 
   // ── per-feed state ──────────────────────────────────
+  // Reddit + X/TikTok lookups use Claude's web search and are the costly part of a scan.
+  // Auto-refresh re-runs them at most once an hour per feed; the Scan button forces them.
+  const SEARCH_EVERY_MS = 60 * 60 * 1000;
   const state = {};
   for (const f of FEEDS) state[f.id] = {
     items:new Map(), reddit:[], redditError:null,
-    social:[], socialError:null, scanned:false, lastScan:null
+    social:[], socialError:null, scanned:false, lastScan:null,
+    redditAt:0, socialAt:0
   };
   let activeId = FEEDS[0].id;
 
@@ -777,7 +775,7 @@ Set "freshness" honestly from the dates you actually find — never guess "today
   }
 
   // ── scan ────────────────────────────────────────────
-  async function scan(){
+  async function scan(force = false){
     if (scanning) return;
     const f = feedById(activeId), st = state[activeId];
     scanning = true;
@@ -789,8 +787,12 @@ Set "freshness" honestly from the dates you actually find — never guess "today
     try{
       const [msgs] = await Promise.all([
         fetchSlackMessages(f.channel),
-        fetchReddit(f, st),
-        fetchSocial(f, st)
+        (force || Date.now() - st.redditAt >= SEARCH_EVERY_MS)
+          ? fetchReddit(f, st).then(() => { if (!st.redditError) st.redditAt = Date.now(); })
+          : null,
+        (force || Date.now() - st.socialAt >= SEARCH_EVERY_MS)
+          ? fetchSocial(f, st).then(() => { if (!st.socialError) st.socialAt = Date.now(); })
+          : null
       ]);
 
       if (msgs.length){
@@ -870,7 +872,7 @@ Importance, judged within the context above: "critical" = major breaking news, r
     }, 500);
   }
 
-  $("scanBtn").addEventListener("click", ()=>{ scan(); if (nextAt){ const s=parseInt($("interval").value,10); nextAt = Date.now()+s*1000; } });
+  $("scanBtn").addEventListener("click", ()=>{ scan(true); if (nextAt){ const s=parseInt($("interval").value,10); nextAt = Date.now()+s*1000; } });
   $("interval").addEventListener("change", schedule);
 
   // Scan every feed in sequence, so the ALL/Critical rail is fully populated.
